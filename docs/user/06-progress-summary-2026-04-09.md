@@ -82,6 +82,13 @@
    - `JwtProvider` 在存在测试构造函数时的 Spring 构造器注入歧义（已显式标注运行时构造器注入）。
    - `singularity-order` 的 `Registry` 运行时装配缺口（已补齐 `Registry`/`ShardPolicy` Bean）。
 
+## 3.5 本轮复核补充（2026-04-09）
+
+1. 已再次执行 `mvn -pl singularity-user test`，结果通过（30 tests, 0 failures）。
+2. 当前测试链路存在两类工程治理告警（不影响本轮通过结论）：
+   - 多模块 `spring-boot-maven-plugin` 未显式声明版本（Maven model warning）。
+   - Mockito 仍采用动态 agent 自附加方式，未来 JDK 版本可能默认收紧。
+
 ## 3.2 场景矩阵 S01-S12
 
 1. S01-S09、S11、S12 在 user 模块范围内已完成验证。
@@ -110,6 +117,8 @@
 1. user 部分历史 CRUD 接口仍可能存在实体直出风险，需进一步 DTO 化。
 2. 跨服务鉴权一致性（order 侧）尚未完成，导致全链路验收缺口。
 3. 生产环境密钥管理仍需结合部署体系（环境变量/配置中心）完成加固。
+4. 构建配置治理未完全收口：`spring-boot-maven-plugin` 版本声明缺失目前为 warning，后续 Maven 版本可能升级为阻断。
+5. 测试运行治理未完全收口：Mockito 动态 agent 告警提示后续 JDK 兼容风险，需提前固化测试运行参数。
 
 ## 6. 下一步建议
 
@@ -124,6 +133,11 @@
 1. order 启动阻断已修复（`Registry/ShardPolicy` 运行时装配已补齐）。
 2. 在 order 接入与 user 对齐的 Auth Layer 语义（401/403、身份注入）。
 3. 完成 S10 端到端联调与验收闭环。
+
+## 6.3 工程治理（构建与测试）
+
+1. 在父/子 POM 中显式收口 `spring-boot-maven-plugin` 版本，消除跨模块模型告警。
+2. 按 Mockito 官方建议为测试运行补充 agent 配置或 JVM 参数，避免未来 JDK 默认策略变更导致测试不稳定。
 
 ## 7. 当前结论
 

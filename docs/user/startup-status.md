@@ -45,6 +45,12 @@ mvn clean package
 - 已补齐可执行 jar 打包（spring-boot-maven-plugin repackage）
 - `singularity-eureka/user/order` 三个模块产物均包含 `Main-Class` 与 `Start-Class`
 
+补充（当前仍待治理项）：
+
+- `singularity-eureka/user/order` 模块的 `spring-boot-maven-plugin` 仍存在未显式声明版本告警（当前不阻断构建）。
+- `mvn -pl singularity-user test` 过程中出现 Mockito 动态 agent 自附加告警（当前不阻断测试）。
+- 上述两项不影响本轮“可启动/可测试”结论，但建议在后续工程治理阶段尽快收口。
+
 ## 5) 应用启动状态
 
 按 `CLAUDE.md` 中方式启动并做冒烟探测，当前结论如下：
