@@ -20,7 +20,9 @@ public class HashShardPolicy implements ShardPolicy {
         if (slotList.isEmpty()) {
             return Optional.empty();
         }
+
         int index = Math.abs(actor.getId().hashCode()) % slotList.size();
+
         return Optional.of(slotList.get(index));
     }
 }

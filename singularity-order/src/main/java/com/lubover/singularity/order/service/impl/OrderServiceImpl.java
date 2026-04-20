@@ -2,7 +2,7 @@ package com.lubover.singularity.order.service.impl;
 
 import com.lubover.singularity.api.*;
 import com.lubover.singularity.api.impl.DefaultAllocator;
-import com.lubover.singularity.order.registry.EurekaSlotRegistry;
+import com.lubover.singularity.order.registry.SlotRegistry;
 import com.lubover.singularity.order.service.OrderService;
 import com.lubover.singularity.order.tx.OrderLocalTransaction;
 import org.apache.rocketmq.client.producer.LocalTransactionState;
@@ -30,12 +30,12 @@ public class OrderServiceImpl implements OrderService {
             List<Interceptor> interceptors,
             RocketMQTemplate rocketMQTemplate,
             StringRedisTemplate redisTemplate,
-            EurekaSlotRegistry eurekaSlotRegistry) {
+            SlotRegistry slotRegistry) {
         this.allocator = new DefaultAllocator(
                 registry,
                 shardPolicy,
                 interceptors != null ? interceptors : Collections.emptyList(),
-                handler(rocketMQTemplate, redisTemplate, eurekaSlotRegistry));
+                handler(rocketMQTemplate, redisTemplate, slotRegistry));
     }
 
     @Override
@@ -45,7 +45,7 @@ public class OrderServiceImpl implements OrderService {
 
     private Interceptor handler(RocketMQTemplate rocketMQTemplate,
             StringRedisTemplate redisTemplate,
-            EurekaSlotRegistry eurekaSlotRegistry) {
+            SlotRegistry slotRegistry) {
         return context -> {
             Actor actor = context.getCurrActor();
             Slot slot = context.getCurrSlot();
@@ -57,7 +57,7 @@ public class OrderServiceImpl implements OrderService {
             // 后者直接委托给该对象执行，不再包含任何业务逻辑
             OrderLocalTransaction localTx = new OrderLocalTransaction(
                     orderId, actor.getId(), slot.getId(),
-                    redisStockKey, redisTemplate, eurekaSlotRegistry);
+                    redisStockKey, redisTemplate, slotRegistry);
 
             // Step 2: 发送 RocketMQ 半消息，触发本地事务
             // sendMessageInTransaction 同步等待 executeLocalTransaction 执行完毕再返回

@@ -1,6 +1,6 @@
 package com.lubover.singularity.order.tx;
 
-import com.lubover.singularity.order.registry.EurekaSlotRegistry;
+import com.lubover.singularity.order.registry.SlotRegistry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -54,12 +54,12 @@ public class OrderLocalTransaction {
     private final String slotId;
     private final String redisStockKey;
     private final StringRedisTemplate redisTemplate;
-    private final EurekaSlotRegistry registry;
+    private final SlotRegistry registry;
 
     public OrderLocalTransaction(String orderId, String actorId, String slotId,
             String redisStockKey,
             StringRedisTemplate redisTemplate,
-            EurekaSlotRegistry registry) {
+            SlotRegistry registry) {
         this.orderId = orderId;
         this.actorId = actorId;
         this.slotId = slotId;
