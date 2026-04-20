@@ -56,14 +56,14 @@ mvn clean package
 按 `CLAUDE.md` 中方式启动并做冒烟探测，当前结论如下：
 
 - `java -jar singularity-eureka/target/singularity-eureka-1.0-SNAPSHOT.jar` **成功**（8761）
-- `java -jar singularity-user/target/singularity-user-1.0-SNAPSHOT.jar` **成功**（8082，已注册到 Eureka）
+- `java -jar singularity-user/target/singularity-user-1.0-SNAPSHOT.jar` **成功**（8090，已注册到 Eureka）
 - `java -jar singularity-order/target/singularity-order-1.0-SNAPSHOT.jar` **成功**（8081，已注册到 Eureka）
 
 HTTP 冒烟：
 
 - `GET http://localhost:8761/` -> `200`
-- `GET http://localhost:8082/api/user/me`（无 token）-> `401`
-- `GET http://localhost:8082/api/user/admin/ping`（无 token）-> `401`
+- `GET http://localhost:8090/api/user/me`（无 token）-> `401`
+- `GET http://localhost:8090/api/user/admin/ping`（无 token）-> `401`
 - `GET http://localhost:8081/` -> `404`（表示 order web 容器已启动，根路径无映射）
 
 本轮新增修复：

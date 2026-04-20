@@ -74,7 +74,7 @@
 1. 回归结果：`mvn clean package` 全仓通过。
 2. 冒烟结果：
    - `singularity-eureka` 启动成功（8761）。
-   - `singularity-user` 启动成功（8082）并成功注册到 Eureka。
+   - `singularity-user` 启动成功（8090）并成功注册到 Eureka。
    - HTTP 快速探测：`GET /`（8761）返回 200；`GET /api/user/me` 与 `GET /api/user/admin/ping`（无 token）均返回 401，符合鉴权预期。
    - `singularity-order` 启动成功（8081）并成功注册到 Eureka；`GET /`（8081）返回 404（无根路径映射，容器可用）。
 3. 本轮回归中发现并修复：
