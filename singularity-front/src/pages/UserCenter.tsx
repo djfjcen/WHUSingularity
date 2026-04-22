@@ -59,7 +59,7 @@ export default function UserCenter() {
 
   useEffect(() => {
     fetchUserDetail()
-    fetchOrders(1, pageSize)
+    fetchOrders(0, pageSize)
   }, [fetchUserDetail, fetchOrders, pageSize])
 
   const handleRecharge = async () => {
@@ -86,7 +86,7 @@ export default function UserCenter() {
   const handleTableChange = (pagination: { current?: number; pageSize?: number }) => {
     const p = pagination.current ?? 1
     setPage(p)
-    fetchOrders(p, pagination.pageSize ?? pageSize)
+    fetchOrders(p - 1, pagination.pageSize ?? pageSize)
   }
 
   const orderColumns: ColumnsType<Order> = [

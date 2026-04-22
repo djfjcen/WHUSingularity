@@ -15,8 +15,9 @@ export default function AdminOrderList() {
   const fetchOrders = useCallback(async (params?: { userId?: string; status?: string; page?: number; size?: number }) => {
     setLoading(true)
     try {
+      const apiPage = (params?.page ?? page) - 1
       const res = await orderApi.list({
-        page: params?.page ?? page,
+        page: apiPage,
         size: params?.size ?? pageSize,
         ...(params?.userId ? { actorId: params.userId } : {}),
         ...(params?.status ? { status: params.status } : {}),
@@ -35,7 +36,7 @@ export default function AdminOrderList() {
   }, [page, pageSize])
 
   useEffect(() => {
-    fetchOrders({ page: 1, size: pageSize })
+    fetchOrders({ page: 0, size: pageSize })
   }, [fetchOrders, pageSize])
 
   const handleSearch = async () => {

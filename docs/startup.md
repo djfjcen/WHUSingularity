@@ -141,3 +141,27 @@ Vite 代理已配置（`vite.config.ts`）：
 - `/api/user` → `localhost:8090`
 - `/api/order` → `localhost:8081`
 - `/api/stock` → `localhost:8082`
+
+---
+
+## 已知后端限制
+
+### 1. 订单状态始终为 "CREATED"（处理中）
+
+**现象**：抢单成功后，订单状态一直显示"处理中"，不会变为"成功"或"失败"。
+
+**根因**：`OrderConsumerService` 消费 `order-topic` 消息并将订单落库时，硬编码 `status = "CREATED"`（`singularity-order/.../consumer/OrderConsumerService.java:77`）。当前架构缺少将订单状态推进为 `PAID` 或 `CANCELLED` 的后续机制（没有状态机或二次 MQ 消费来更新订单）。
+
+**影响范围**：前端订单列表、抢单状态轮询均显示"处理中"。
+
+### 2. MySQL 库存表不随抢单扣减
+
+**现象**：`stock` 表的 `available_quantity` 始终等于初始值，抢单后不会减少。
+
+**根因**：抢单流程只通过 Redis Lua 脚本扣减 `stock:bucket-{n}` 的 Redis 库存，但 **没有生产者向 `stock-topic` 发送消息**。`StockConsumer`（`singularity-stock/.../listener/StockConsumer.java`）监听 `stock-topic` 并负责异步落库扣减，但由于从未收到消息，MySQL 库存始终不变。
+
+**影响范围**：管理后台库存列表看到的可用库存是初始化值，非实时值。Redis bucket 库存是真实剩余量（可通过 `redis-cli GET stock:bucket-1` 查看）。
+
+### 3. 订单状态类型与 API 契约不一致
+
+API 契约（`docs/frontend/03-frontend-api-contracts.md`）规定 `status` 为 number（0=处理中, 1=成功, 2=失败），但后端实际返回字符串 `"CREATED"`。前端已做兼容处理：将 `"CREATED"` 视为处理中。

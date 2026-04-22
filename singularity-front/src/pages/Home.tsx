@@ -65,7 +65,7 @@ export default function Home() {
 
     const poll = async () => {
       try {
-        const res = await orderApi.list({ actorId: String(user!.id), page: 1, size: 10 })
+        const res = await orderApi.list({ actorId: String(user!.id), page: 0, size: 10 })
         if (!res.success || !res.data) return
         const order = res.data.content.find((o) => o.orderId === orderId)
         if (!order) return
