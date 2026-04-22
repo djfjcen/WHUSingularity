@@ -84,11 +84,29 @@ java -jar singularity-order/target/singularity-order-1.0-SNAPSHOT.jar
 
 ---
 
-### 4. 测试账户与数据
+### 4. 初始化库存（Redis 预热）
+
+秒杀扣减走的是 **Redis bucket 库存**，而非数据库 stock 表。启动后必须预热：
+
+```bash
+# bucket-1
+curl -X POST http://localhost:8082/api/stock/slots/preheat \
+  -H "Content-Type: application/json" \
+  -d '{"slotId":"bucket-1","quantity":100,"overwrite":true}'
+
+# bucket-2
+curl -X POST http://localhost:8082/api/stock/slots/preheat \
+  -H "Content-Type: application/json" \
+  -d '{"slotId":"bucket-2","quantity":100,"overwrite":true}'
+```
+
+---
+
+### 5. 测试账户与数据
 
 #### 4.1 预置测试账户
 
-启动后可直接使用以下账户登录：
+启动后可直接使用以下账户登录（没有的话自己创建，建议如下）：
 
 | 角色 | 用户名 | 密码 | 用途 |
 |---|---|---|---|
