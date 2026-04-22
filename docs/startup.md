@@ -83,3 +83,43 @@ java -jar singularity-order/target/singularity-order-1.0-SNAPSHOT.jar
 - `singularity-stock`
 
 ---
+
+### 4. 测试账户与数据
+
+#### 4.1 预置测试账户
+
+启动后可直接使用以下账户登录：
+
+| 角色 | 用户名 | 密码 | 用途 |
+|---|---|---|---|
+| 普通用户 | `user` | `12345678` | 测试秒杀、用户中心 |
+| 管理员 | `admin` | `admin123456` | 测试管理后台 |
+
+> Admin 账户通过 `/register` 注册后，需在数据库手动改 role：
+> ```sql
+> UPDATE singularity_user.user SET role = 'admin' WHERE username = 'admin';
+> ```
+
+#### 4.2 预置测试商品（库存）
+
+```sql
+USE singularity_stock;
+INSERT INTO stock (product_id, available_quantity, reserved_quantity, total_quantity) VALUES
+('IPHONE_16', 100, 0, 100),
+('PS5_PRO', 50, 0, 50),
+('RTX_5090', 10, 0, 10),
+('SWITCH_2', 30, 0, 30);
+```
+
+#### 4.3 前端开发环境
+
+```bash
+cd singularity-front
+pnpm install
+pnpm dev
+```
+
+Vite 代理已配置（`vite.config.ts`）：
+- `/api/user` → `localhost:8090`
+- `/api/order` → `localhost:8081`
+- `/api/stock` → `localhost:8082`
