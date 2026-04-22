@@ -113,7 +113,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    public Map<String, Object> getUserById(@PathVariable Long id) {
+    public Map<String, Object> getUserById(@PathVariable("id") Long id) {
         User user = userService.getUserById(id);
         Map<String, Object> result = new HashMap<>();
         result.put("success", user != null);
@@ -131,7 +131,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public Map<String, Object> updateUser(@PathVariable Long id, @RequestBody Map<String, Object> request) {
+    public Map<String, Object> updateUser(@PathVariable("id") Long id, @RequestBody Map<String, Object> request) {
         String password = (String) request.get("password");
         String nickname = (String) request.get("nickname");
         String role = (String) request.get("role");
@@ -145,7 +145,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    public Map<String, Object> deleteUser(@PathVariable Long id) {
+    public Map<String, Object> deleteUser(@PathVariable("id") Long id) {
         boolean deleted = userService.deleteUser(id);
         Map<String, Object> result = new HashMap<>();
         result.put("success", deleted);
@@ -154,7 +154,7 @@ public class UserController {
     }
 
     @PostMapping("/{id}/recharge")
-    public Map<String, Object> recharge(@PathVariable Long id, @RequestBody Map<String, Object> request) {
+    public Map<String, Object> recharge(@PathVariable("id") Long id, @RequestBody Map<String, Object> request) {
         BigDecimal amount = new BigDecimal(request.get("amount").toString());
         boolean success = userService.recharge(id, amount);
         Map<String, Object> result = new HashMap<>();
@@ -164,7 +164,7 @@ public class UserController {
     }
 
     @PostMapping("/{id}/deduct")
-    public Map<String, Object> deduct(@PathVariable Long id, @RequestBody Map<String, Object> request) {
+    public Map<String, Object> deduct(@PathVariable("id") Long id, @RequestBody Map<String, Object> request) {
         BigDecimal amount = new BigDecimal(request.get("amount").toString());
         boolean success = userService.deduct(id, amount);
         Map<String, Object> result = new HashMap<>();

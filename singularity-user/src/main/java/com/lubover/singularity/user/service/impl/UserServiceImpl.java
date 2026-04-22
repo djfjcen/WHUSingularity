@@ -60,7 +60,7 @@ public class UserServiceImpl implements UserService {
     @Override
     @Caching(put = {
             @CachePut(value = CacheConfig.USER_CACHE_NAME, key = "#result.id"),
-            @CachePut(value = CacheConfig.USER_USERNAME_CACHE_NAME, key = "#username")
+            @CachePut(value = CacheConfig.USER_USERNAME_CACHE_NAME, key = "#p0")
     })
     public User login(String username, String password) {
         validateLoginRequest(username, password);
@@ -76,13 +76,12 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @Cacheable(value = CacheConfig.USER_CACHE_NAME, key = "#id", unless = "#result == null")
     public User getUserById(Long id) {
         return userMapper.selectById(id);
     }
 
     @Override
-    @Cacheable(value = CacheConfig.USER_USERNAME_CACHE_NAME, key = "#username", unless = "#result == null")
+    @Cacheable(value = CacheConfig.USER_USERNAME_CACHE_NAME, key = "#p0", unless = "#result == null")
     public User getUserByUsername(String username) {
         return userMapper.selectByUsername(username);
     }
@@ -94,7 +93,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    @CachePut(value = CacheConfig.USER_CACHE_NAME, key = "#id")
+    @CachePut(value = CacheConfig.USER_CACHE_NAME, key = "#p0")
     @CacheEvict(value = CacheConfig.USER_USERNAME_CACHE_NAME, allEntries = true)
     public User updateUser(Long id, String password, String nickname, String role, BigDecimal balance) {
         User user = userMapper.selectById(id);
