@@ -24,6 +24,8 @@
 | Admin 用户管理 | 用户列表 Table + 编辑 Modal + 删除 Popconfirm | `pages/admin/AdminUserList.tsx` |
 | 秒杀主页 `/` | 商品 Card 网格、3s 库存轮询、抢单按钮防重复、订单结果轮询展示 | `pages/Home.tsx` |
 | 用户中心 `/user` | 用户信息卡片、余额充值 Modal、订单列表分页 Table | `pages/UserCenter.tsx` |
+| Admin 库存管理 `/admin/stock` | 库存列表 Table、初始化 Modal、变更日志 Modal | `pages/admin/AdminStockList.tsx` |
+| Admin 订单管理 `/admin/orders` | 全部订单列表 Table、userId + status 筛选、分页 | `pages/admin/AdminOrderList.tsx` |
 | WHU 主题 | Ant Design ConfigProvider 配色 | `App.tsx` |
 | Vite 代理 | `/api/user` → 8090, `/api/order` → 8081, `/api/stock` → 8082 | `vite.config.ts` |
 
@@ -31,8 +33,6 @@
 
 | 模块 | 内容 | 依赖后端 |
 |---|---|---|
-| Admin - 库存管理 `/admin/stock` | 库存列表/初始化/变更日志 | 否（stock Controller 已就绪） |
-| Admin - 订单管理 `/admin/orders` | 订单列表/筛选 | 否（order Controller 已就绪） |
 | WebMCP 集成 | 浏览器 AI 调用页面 tools | 否 |
 
 ---
@@ -65,8 +65,8 @@
 
 ### Phase 3 — 管理 + 增强（低优先级，后端接口已就绪）
 
-| # | 任务 | 理由 |
+| # | 任务 | 状态 |
 |---|---|---|
-| 6 | **Admin 库存管理** `/admin/stock` | 库存列表、初始化、变更日志（stock Controller 已就绪） |
-| 7 | **Admin 订单管理** `/admin/orders` | 全部订单查看、筛选（order list 接口已就绪） |
-| 8 | **WebMCP 集成** | 增强能力，基础页面稳定后接入（详见 [02-frontend-tech-stack.md §7](02-frontend-tech-stack.md)） |
+| 6 | **Admin 库存管理** `/admin/stock` | 已完成 |
+| 7 | **Admin 订单管理** `/admin/orders` | 已完成 |
+| 8 | **WebMCP 集成** | 待实现 |

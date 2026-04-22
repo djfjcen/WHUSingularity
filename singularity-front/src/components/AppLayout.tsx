@@ -17,6 +17,8 @@ export default function AppLayout() {
 
   const adminItems = [
     { key: 'users', label: '用户管理', onClick: () => navigate('/admin/users') },
+    { key: 'stock', label: '库存管理', onClick: () => navigate('/admin/stock') },
+    { key: 'orders', label: '订单管理', onClick: () => navigate('/admin/orders') },
   ]
 
   return (
