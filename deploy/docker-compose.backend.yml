@@ -7,7 +7,7 @@ services:
       MYSQL_ROOT_PASSWORD: root
       TZ: Asia/Shanghai
     ports:
-      - "3306:3306"
+      - "3310:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./mysql/init:/docker-entrypoint-initdb.d
@@ -306,6 +306,30 @@ services:
       - rmq-broker
     ports:
       - "8083:8083"
+
+  singularity-product-0:
+    image: maven:3.9.9-eclipse-temurin-21
+    container_name: singularity-product-0
+    restart: unless-stopped
+    working_dir: /workspace
+    command: sh -c "java -jar singularity-product/target/singularity-product-1.0-SNAPSHOT.jar"
+    environment:
+      SPRING_CLOUD_NACOS_SERVER_ADDR: nacos:8848
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/singularity_product?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: "6379"
+      SERVER_PORT: "8087"
+    volumes:
+      - ../:/workspace
+      - maven_repo:/root/.m2
+    depends_on:
+      - mysql
+      - redis
+      - nacos
+    ports:
+      - "8087:8087"
 
 volumes:
   mysql_data:
