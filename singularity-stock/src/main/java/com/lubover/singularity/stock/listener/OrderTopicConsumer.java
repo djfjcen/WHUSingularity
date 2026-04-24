@@ -2,6 +2,7 @@ package com.lubover.singularity.stock.listener;
 
 import com.lubover.singularity.stock.event.OrderMessage;
 import com.lubover.singularity.stock.service.StockService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.rocketmq.spring.annotation.ConsumeMode;
 import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;
@@ -46,11 +47,30 @@ public class OrderTopicConsumer implements RocketMQListener<MessageExt> {
                 logger.warn("order-topic扣库存失败: orderId={}, productId={}, messageId={}",
                         message.getOrderId(), message.getProductId(), messageId);
             }
+        } catch (JsonProcessingException e) {
+            // 兼容旧协议: order-topic 曾发送纯 orderId 字符串，而非 JSON。
+            // 对这类历史消息直接忽略，避免持续重试刷日志。
+            if (isLegacyOrderIdPayload(payload)) {
+                logger.warn("忽略旧版order-topic消息(纯orderId): orderId={}, messageId={}", payload, messageId);
+                return;
+            }
+            logger.warn("忽略非JSON的order-topic消息: payload={}, messageId={}", payload, messageId);
         } catch (IllegalArgumentException e) {
             logger.warn("忽略非法order-topic消息: payload={}, reason={}", payload, e.getMessage());
         } catch (Exception e) {
             logger.error("处理order-topic消息异常: payload={}, messageId={}", payload, messageId, e);
             throw new RuntimeException("处理order-topic消息失败", e);
         }
+    }
+
+    private boolean isLegacyOrderIdPayload(String payload) {
+        if (payload == null) {
+            return false;
+        }
+        String trimmed = payload.trim();
+        if (trimmed.isEmpty() || trimmed.startsWith("{") || trimmed.startsWith("[")) {
+            return false;
+        }
+        return trimmed.matches("^[0-9a-fA-F-]{16,64}$");
     }
 }
