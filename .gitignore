@@ -43,3 +43,4 @@ build/
 refs/
 .history/
 .local/
+deploy/jmeter/

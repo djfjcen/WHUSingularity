@@ -27,3 +27,14 @@ management:
     web:
       exposure:
         include: health,info,gateway
+
+singularity:
+  gateway:
+    trace-header:
+      enabled: false
+
+logging:
+  level:
+    root: INFO
+    org.springframework.cloud.gateway: WARN
+    reactor.netty: WARN

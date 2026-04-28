@@ -3,6 +3,7 @@ package com.lubover.singularity.gateway;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.cloud.gateway.route.Route;
 import org.springframework.cloud.gateway.support.ServerWebExchangeUtils;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.core.Ordered;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
@@ -14,6 +15,7 @@ import java.net.URI;
  * Adds debug headers to help verify gateway forwarding behavior.
  */
 @Component
+@ConditionalOnProperty(prefix = "singularity.gateway.trace-header", name = "enabled", havingValue = "true")
 public class GatewayTraceHeaderFilter implements GlobalFilter, Ordered {
 
     @Override
