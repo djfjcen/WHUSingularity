@@ -133,6 +133,7 @@ services:
       ROCKETMQ_PRODUCER_GROUP: order-producer-group
       ROCKETMQ_CONSUMER_GROUP: order-consumer-group
       SPRING_APPLICATION_JSON: '{"singularity":{"order":{"slots":[{"id":"bucket-1","redis-key":"stock:bucket-1","product-id":"PROD_001"},{"id":"bucket-2","redis-key":"stock:bucket-2","product-id":"PROD_002"}]}}}'
+      SPRING_PROFILES_ACTIVE: loadtest
       SERVER_PORT: "8081"
     volumes:
       - ${REPO_ROOT:-..}:/workspace
@@ -144,6 +145,41 @@ services:
       - rmq-broker
     healthcheck:
       test: ["CMD-SHELL", "curl -sf http://127.0.0.1:8081/actuator/health >/dev/null || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
+
+  # 写链路基线对照：单 key + 无 singularity-core；压测 profile loadtest（关 accesslog、WARN 日志）
+  singularity-order-baseline:
+    image: maven:3.9.9-eclipse-temurin-21
+    restart: unless-stopped
+    working_dir: /workspace
+    command: sh -c "java -jar singularity-order-baseline/target/singularity-order-baseline-1.0-SNAPSHOT.jar"
+    environment:
+      SPRING_PROFILES_ACTIVE: loadtest
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/singularity_order_baseline?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: root
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: "6379"
+      ROCKETMQ_NAME_SERVER: rmq-namesrv:9876
+      BASELINE_USER_SERVICE_URL: http://singularity-user:8090
+      SERVER_PORT: "8085"
+    volumes:
+      - ${REPO_ROOT:-..}:/workspace
+      - maven_repo:/root/.m2
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rmq-broker:
+        condition: service_started
+      singularity-user:
+        condition: service_started
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://127.0.0.1:8085/actuator/health >/dev/null || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 30
@@ -358,6 +394,76 @@ services:
           -e "RPS_PER_PORT=$${RPS_PER_PORT}" \
           -e "DURATION=$${DURATION}" \
           /scripts/k6-snag-docker-internal.js
+
+  # 单实例单车道：run-k6-order-load-one.ps1；总 RPS = RPS。默认不设 ORDER_PRODUCT_ID → allocate+拦截器链。
+  # 设 ORDER_PRODUCT_ID=PROD_001 时走 snagOrderByProduct（与 baseline 口径一致）。
+  k6-order-load-one:
+    image: grafana/k6:latest
+    profiles: [k6]
+    volumes:
+      - ${REPO_ROOT:-..}/tests/order-stress-test:/scripts:ro
+      - ${REPO_ROOT:-..}/tests/order-stress-test/k6-out:/out:rw
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    environment:
+      ORDER_BASE: "http://singularity-order:8081"
+      ORDER_PRODUCT_ID: ${ORDER_PRODUCT_ID:-}
+      DURATION: "1m"
+      RPS: "12000"
+      VU_PRE_CAP: "6600"
+      VU_MAX_CAP: "15000"
+      SUMMARY_OUT: /out/summary-docker-order-one.json
+      K6_START_DELAY: "0"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        sleep "$${K6_START_DELAY}"
+        K6_ENV="-e SUMMARY_OUT=$${SUMMARY_OUT} -e ORDER_BASE=$${ORDER_BASE} -e RPS=$${RPS} -e VU_PRE_CAP=$${VU_PRE_CAP} -e VU_MAX_CAP=$${VU_MAX_CAP} -e DURATION=$${DURATION}"
+        if [ -n "$${ORDER_PRODUCT_ID}" ]; then
+          K6_ENV="$$K6_ENV -e ORDER_PRODUCT_ID=$${ORDER_PRODUCT_ID}"
+        fi
+        exec k6 run $$K6_ENV /scripts/k6-snag-docker-internal-single-lane.js
+
+  # 单实例 baseline 单车道：run-k6-order-baseline-load.ps1；需 productId，先 refill-baseline-stock
+  k6-order-baseline-load-one:
+    image: grafana/k6:latest
+    profiles: [k6]
+    volumes:
+      - ${REPO_ROOT:-..}/tests/order-stress-test:/scripts:ro
+      - ${REPO_ROOT:-..}/tests/order-stress-test/k6-out:/out:rw
+    depends_on:
+      singularity-order-baseline:
+        condition: service_healthy
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    environment:
+      ORDER_BASE: "http://singularity-order-baseline:8085"
+      BASELINE_PRODUCT_ID: "1001"
+      DURATION: "1m"
+      RPS: "14000"
+      VU_PRE_CAP: "6600"
+      VU_MAX_CAP: "15000"
+      SUMMARY_OUT: /out/summary-docker-baseline.json
+      K6_START_DELAY: "0"
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        set -e
+        sleep "$${K6_START_DELAY}"
+        exec k6 run \
+          -e "SUMMARY_OUT=$${SUMMARY_OUT}" \
+          -e "ORDER_BASE=$${ORDER_BASE}" \
+          -e "BASELINE_PRODUCT_ID=$${BASELINE_PRODUCT_ID}" \
+          -e "RPS=$${RPS}" \
+          -e "VU_PRE_CAP=$${VU_PRE_CAP}" \
+          -e "VU_MAX_CAP=$${VU_MAX_CAP}" \
+          -e "DURATION=$${DURATION}" \
+          /scripts/k6-snag-docker-internal-single-lane.js
 
   # 与 k6-order-load 相同，脚本校验 snag JSON success:true；汇总 /out/summary-docker-business.json
   # 可选 -e STRICT_BUSINESS_MIN_RATE=0.05 要求业务成功率下限（请先 refill Redis）

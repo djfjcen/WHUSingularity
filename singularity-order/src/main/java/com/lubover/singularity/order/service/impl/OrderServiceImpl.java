@@ -6,6 +6,7 @@ import com.lubover.singularity.order.dto.OrderMessage;
 import com.lubover.singularity.order.entity.Order;
 import com.lubover.singularity.order.feign.UserClient;
 import com.lubover.singularity.order.mapper.OrderMapper;
+import com.lubover.singularity.order.metrics.OrderSnagMetrics;
 import com.lubover.singularity.order.registry.SlotRegistry;
 import com.lubover.singularity.order.service.OrderService;
 import com.lubover.singularity.order.slot.StockSlot;
@@ -30,6 +31,8 @@ import java.util.UUID;
 @Service
 public class OrderServiceImpl implements OrderService {
 
+    private static final String PATH_ALLOCATE = "allocate";
+    private static final String PATH_BY_PRODUCT = "by_product";
     private static final BigDecimal PRODUCT_PRICE = BigDecimal.valueOf(99);
 
     private final Allocator allocator;
@@ -38,6 +41,7 @@ public class OrderServiceImpl implements OrderService {
     private final SlotRegistry slotRegistry;
     private final RocketMQTemplate rocketMQTemplate;
     private final StringRedisTemplate redisTemplate;
+    private final OrderSnagMetrics snagMetrics;
 
     @Autowired
     public OrderServiceImpl(
@@ -48,12 +52,14 @@ public class OrderServiceImpl implements OrderService {
             StringRedisTemplate redisTemplate,
             SlotRegistry slotRegistry,
             OrderMapper orderMapper,
-            UserClient userClient) {
+            UserClient userClient,
+            OrderSnagMetrics snagMetrics) {
+        this.snagMetrics = snagMetrics;
         this.allocator = new DefaultAllocator(
                 registry,
                 shardPolicy,
                 interceptors != null ? interceptors : Collections.emptyList(),
-                handler(rocketMQTemplate, redisTemplate, slotRegistry));
+                handler(rocketMQTemplate, redisTemplate, slotRegistry, snagMetrics));
         this.orderMapper = orderMapper;
         this.userClient = userClient;
         this.slotRegistry = slotRegistry;
@@ -78,6 +84,7 @@ public class OrderServiceImpl implements OrderService {
             }
         }
         if (targetSlot == null) {
+            snagMetrics.recordOutcome(PATH_BY_PRODUCT, "n/a", false);
             return new Result(false, "商品库存不足或不存在");
         }
 
@@ -100,14 +107,9 @@ public class OrderServiceImpl implements OrderService {
                 .setHeader("orderId", orderId)
                 .build();
 
-        TransactionSendResult sendResult = rocketMQTemplate.sendMessageInTransaction(
-                "order-topic", msg, localTx);
-
-        if (sendResult.getLocalTransactionState() == LocalTransactionState.COMMIT_MESSAGE) {
-            return new Result(true, orderId);
-        } else {
-            return new Result(false, "库存不足，抢单失败");
-        }
+        Result result = commitSnag(PATH_BY_PRODUCT, targetSlot.getId(), msg, localTx);
+        snagMetrics.recordOutcome(PATH_BY_PRODUCT, targetSlot.getId(), result.isSuccess());
+        return result;
     }
 
     @Override
@@ -146,7 +148,8 @@ public class OrderServiceImpl implements OrderService {
 
     private Interceptor handler(RocketMQTemplate rocketMQTemplate,
             StringRedisTemplate redisTemplate,
-            SlotRegistry slotRegistry) {
+            SlotRegistry slotRegistry,
+            OrderSnagMetrics snagMetrics) {
         return context -> {
             Actor actor = context.getCurrActor();
             Slot slot = context.getCurrSlot();
@@ -174,14 +177,32 @@ public class OrderServiceImpl implements OrderService {
                     .setHeader("orderId", orderId)
                     .build();
 
-            TransactionSendResult sendResult = rocketMQTemplate.sendMessageInTransaction(
-                    "order-topic", msg, localTx);
-
-            if (sendResult.getLocalTransactionState() == LocalTransactionState.COMMIT_MESSAGE) {
-                context.setResult(new Result(true, orderId));
-            } else {
-                context.setResult(new Result(false, "stock insufficient or tx failed for slot: " + slot.getId()));
-            }
+            long handlerStart = System.nanoTime();
+            Result result = commitSnag(PATH_ALLOCATE, slot.getId(), msg, localTx,
+                    rocketMQTemplate, snagMetrics);
+            snagMetrics.recordHandler(System.nanoTime() - handlerStart);
+            context.setResult(result);
         };
+    }
+
+    private Result commitSnag(String path, String slotId, Message<OrderMessage> msg,
+            OrderLocalTransaction localTx) {
+        return commitSnag(path, slotId, msg, localTx, rocketMQTemplate, snagMetrics);
+    }
+
+    private static Result commitSnag(String path, String slotId, Message<OrderMessage> msg,
+            OrderLocalTransaction localTx,
+            RocketMQTemplate rocketMQTemplate,
+            OrderSnagMetrics snagMetrics) {
+        long txStart = System.nanoTime();
+        TransactionSendResult sendResult = rocketMQTemplate.sendMessageInTransaction(
+                "order-topic", msg, localTx);
+        snagMetrics.recordTxSend(System.nanoTime() - txStart);
+        snagMetrics.recordTxState(path, sendResult);
+
+        if (sendResult.getLocalTransactionState() == LocalTransactionState.COMMIT_MESSAGE) {
+            return new Result(true, msg.getPayload().getOrderId());
+        }
+        return new Result(false, "stock insufficient or tx failed for slot: " + slotId);
     }
 }

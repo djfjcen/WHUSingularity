@@ -1,0 +1,12 @@
+# 压测 profile：启动时设 SPRING_PROFILES_ACTIVE=loadtest
+server:
+  tomcat:
+    accesslog:
+      enabled: false
+
+logging:
+  level:
+    root: WARN
+    com.lubover.singularity.orderbaseline: WARN
+    org.apache.rocketmq: WARN
+    org.springframework: WARN

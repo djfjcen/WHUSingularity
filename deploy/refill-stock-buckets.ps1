@@ -1,8 +1,8 @@
 # 将 PROD_001/PROD_002 在 MySQL(singularity_stock) 中设为大量库存，并对 Redis bucket 执行覆盖预热（走库存服务 API）。
 # 默认经网关 8080；若直连 stock 可设 -StockBaseUrl http://localhost:8082
 param(
-    [long]$Quantity = 1000000,
-    [long]$RedisQuantity = 1000000,
+    [long]$Quantity = 50000000,
+    [long]$RedisQuantity = 50000000,
     [string]$MysqlContainer = "singularity-mysql",
     [string]$StockBaseUrl = "http://localhost:8080"
 )

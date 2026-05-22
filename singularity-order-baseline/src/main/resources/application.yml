@@ -1,5 +1,17 @@
 server:
   port: 8085
+  tomcat:
+    keep-alive-timeout: 60s
+    max-keep-alive-requests: 15000
+    threads:
+      max: 800
+      min-spare: 64
+    max-connections: 20000
+    accept-count: 8192
+    # 压测关闭：SPRING_PROFILES_ACTIVE=loadtest（见 application-loadtest.yml）
+    accesslog:
+      enabled: true
+      pattern: '%h %l %u %t "%r" %s %b port=%p time=%D'
 
 spring:
   application:

@@ -1,0 +1,13 @@
+# 压测 profile：docker compose 中 singularity-order 设 SPRING_PROFILES_ACTIVE=loadtest
+server:
+  tomcat:
+    accesslog:
+      enabled: false
+
+logging:
+  level:
+    root: WARN
+    com.lubover.singularity.order: WARN
+    com.lubover.singularity.api: WARN
+    org.apache.rocketmq: WARN
+    org.springframework: WARN

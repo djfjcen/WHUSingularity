@@ -1,5 +1,6 @@
 CREATE DATABASE IF NOT EXISTS singularity_user DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE DATABASE IF NOT EXISTS singularity_order DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE IF NOT EXISTS singularity_order_baseline DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE DATABASE IF NOT EXISTS singularity_stock DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE DATABASE IF NOT EXISTS singularity_product DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE DATABASE IF NOT EXISTS singularity_merchant DEFAULT CHARSET utf8mb4 COLLATE utf8mb4_unicode_ci;

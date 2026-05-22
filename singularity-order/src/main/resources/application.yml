@@ -1,8 +1,16 @@
 server:
   port: 8081
   tomcat:
+    # keep-alive：同一 TCP 连接上最多跟多少条 HTTP、空闲多久关；不解决「建连阶段 dial 超时」。
     keep-alive-timeout: 60s
-    max-keep-alive-requests: 5000
+    max-keep-alive-requests: 15000
+    # 高压下 dial: i/o timeout 多为 accept/线程跟不上，可酌情调大（按机器内存与延迟权衡）。
+    threads:
+      max: 800
+      min-spare: 64
+    max-connections: 20000
+    accept-count: 8192
+    # 压测关闭：SPRING_PROFILES_ACTIVE=loadtest（见 application-loadtest.yml）
     accesslog:
       enabled: true
       pattern: '%h %l %u %t "%r" %s %b port=%p time=%D'

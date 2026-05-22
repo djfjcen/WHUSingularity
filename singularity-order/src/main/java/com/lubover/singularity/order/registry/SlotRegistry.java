@@ -44,7 +44,7 @@ public class SlotRegistry implements Registry {
 
     public void markEmpty(String slotId) {
         emptyCache.put(slotId, Boolean.TRUE);
-        log.info("slot [{}] marked as empty, excluded from future allocations", slotId);
+        log.debug("slot [{}] marked as empty, excluded from future allocations", slotId);
     }
 
     public void clearEmpty(String slotId) {
